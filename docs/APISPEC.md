@@ -2,221 +2,513 @@
 
 ## General info
 
-- Ratelimit: 10 req/m
+Testaustime API gives 5 different routes:
+- [auth](#auth)
+- [users](#users)
+- activity
+- friends
+- leaderboards
 
-The desired interval at which to send heartbeats is immediately when editing a file, and after that at max every 30 seconds, and only when the user does something actively in the editor.
+Limits: 
+- Usually Ratelimit: 10 req/m. The desired interval at which to send heartbeats is immediately when editing a file, and after that at max every 30 seconds, and only when the user does something actively in the editor.
 
-## Endpoints
+## <a name="auth"></a>  auth
 
-### POST /activity/update
+Contains various user authorization operations
 
-Logs current activity.
+### Endpoints
 
-This is the main endpoint this service is based on, this is where you current coding session data is sent.
+| Endpoint|  Method | Description | 
+| --- | --- | --- | 
+| [/auth/register](#register) | POST | Creating a new user and returns the user auth token, friend code and registration_time | 
+| [/auth/login](#login) | POST | Loging user to system and returns the user auth token and friend code | 
+| [/auth/changeusername](#changeusername) | POST | Changing user username | 
+| [/auth/changepassword](#changepassword) | POST | Changing user password | 
+| [/auth/regenerate](#regenerate)  | POST | Regenerate user auth token | 
 
-Accepts:
+#### <a name="register"></a>    [1. POST /auth/register](#auth)
+
+Creating a new user and returns the user auth token, friend code and registration_time. Ratelimit: 1 req/24h
+
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json | 
+
+**Body params:**
+
+| Param |  Type | Required | Description |
+| --- | --- | --- | --- |
+| username | string | Yes | Usename has to be between 2 and 32 characters long |
+| password | string | Yes | Password has to be between 8 and 128 characters long |
+
+
+**Sample request**
+```curl
+curl --request POST https://testaustime.fi/api/auth/register' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "username": "<username>",
+    "password": "<password>"
+}
 ```
+**Sample response**
+```JSON
 {
-    "language": string,
-    "hostname": string,
-    "editor_name": string,
-    "project_name": string
+    "auth_token": "<token>", 
+    "username": "<username>", 
+    "friend_code": "<friend_code>", 
+    "registration_time": "YYYY-DD-MMTHH:MM:SS.sssssssssZ"
 }
 ```
 
-Required headers:
-```
-Authorization: Bearer <token>
-Content-type: application/json
-```
+**Response definitions**
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| auth_token | string | Bearer Auth token. Using for the all next resquests to identify user |
+| username | string | Username |
+| friend_code | string | By this code another users can add user to the friend list |
+| registration_time | string (ISO 8601 format) | Time of registration to nanoseconds |
 
-### POST /activity/flush
 
-Flushes any currently active coding session
-
-Required headers:
-```
-Authorization: Bearer <token>
-```
-
-### GET /users/{username}/activity/data
-
-Get your coding activity data
-
-Url params:
-- {username}
-- language
-- editor
-- project_name
-- hostname
-- min_duration
-
-The users with `{username}` has to be a friend or self of the auth_token provided
-
-A special case of `{username}` is `@me` where the response will include the data of the authenticating user
-
-Returns:
-```
-[
-    {
-        "language": string,
-        "hostname": string,
-        "editor_name": string,
-        "project_name": string,
-        "start_time": number,
-        "duration": number
-    },
-    ...
-]
-```
-
-Required headers:
-```
-Authorization: Bearer <token>
-```
-
-### GET /users/@me
-
-Gets the data of the authenticating user
-
-Returns:
-```
-{
-    "id": int,
-    "user_name": string,
-    "friend_code": string,
-    "registration_time": string,
-}
-```
-
-Required headers:
-```
-Authorization: Bearer <token>
-```
-
-### POST /users/register
-
-Registers a new user and returns the users auth token
-
-Accepts:
-```
-{
-    "username": string,
-    "password": string
-}
-```
-
-Required headers:
-```
-Content-type: application/json
-```
-
-Returns:
-```
-<AUTHTOKEN>
-```
-
-### POST /users/login
+#### <a name="login"></a>  [2. POST /auth/login](#auth)
 
 Logins to a users account returning the auth token
 
-Accepts:
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json | 
+
+**Body params:**
+
+| Param |  Type | Required | Description |
+| --- | --- | --- | --- |
+| username | string | Yes | Usename has to be between 2 and 32 characters long |
+| password | string | Yes | Password has to be between 8 and 128 characters long |
+
+
+**Sample request**
+```curl
+curl --request POST 'https://testaustime.fi/api/auth/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "username": "<username>",
+    "password": "<password>"
+}'
+
 ```
+**Sample response**
+```JSON
 {
-    "username": string,
-    "password": string
+    "id": 0,
+    "auth_token": "<token>",
+    "friend_code": "<friend_code>",
+    "username": "<username>",
+    "registration_time": "YYYY-DD-MMTHH:MM:SS.ssssssZ"
 }
 ```
 
-Required headers:
+**Response definitions**
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| id | int| User id |
+| auth_token | string | Bearer Auth token. Using for the all next resquests to identify user |
+| friend_code | string | By this code another users can add user to the friend list |
+| username | string | Username |
+| registration_time | string (ISO 8601 format) | Time of registration to microsends |
+
+#### <a name="changeusername"></a>   [3. POST /auth/changeusername](#auth)
+
+Changes username
+
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json |
+| Authorization | Bearer `<token>` |
+
+**Body params:**
+
+| Param |  Type | Required | Description |
+| --- | --- | --- | --- |
+| new | string | Yes | New username. Usename has to be between 2 and 32 characters long |
+
+**Sample request**
+```curl
+curl --request POST 'https://testaustime.fi/api/auth/changeusername' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <token> '{
+    "new": "<new_username>"
+}'
 ```
-Content-type: application/json
+    
+**Sample response**
+```http
+200 OK
 ```
 
-Returns:
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| If "new" has <2 or >32 symbols | 400 Bad Request | `{"error" : "Username is not between 2 and 32 chars"}` | 
+| If "new" is using existing username| 403 Forbidden | `"error"» : "User exists"` |
+
+#### <a name="changepassword"></a>  [4. POST /auth/changepassword](#auth)
+
+Changes users password
+
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json |
+| Authorization | Bearer `<token>` |
+
+**Body params:**
+
+| Param |  Type | Required | Description |
+| --- | --- | --- | --- |
+| old | string | Yes | Current password |
+| new | string | Yes | New password. Password has to be between 8 and 128 characters long |
+
+
+
+**Sample request**
+```curl
+curl --request POST 'https://testaustime.fi/api/auth/changepassword' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <token>' \
+--data-raw '{
+   "old": "<old_password>",
+   "new": "<new_password>"
+}'
 ```
-<AUTHTOKEN>
+    
+**Sample response**
+```http
+200 OK
 ```
 
-### POST /users/changepassword
-
-Changes the users password
-
-Accepts:
-```
-{
-    "old": string,
-    "new": string
-}
-```
-
-Required headers:
-```
-Authorization: Bearer <token>
-Content-type: application/json
-```
-
-### POST /users/regenerate
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| "new" has < 8 or >132 symbols  | 400 Bad Request | `{"error": "Password is not between 8 and 132 chars"}` | 
+| "old" is incorrect| 401 Unathorized | `{"error": "You are not authorized"}` |
+    
+#### <a name="regenerate"></a>  [5. POST /auth/regenerate](#auth)
 
 Regenerate users auth token
+    
+**Header params:**
 
-Required headers:
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Sample request**
+```curl
+curl --request POST 'https://testaustime.fi/api/auth/regenerate' \
+--header 'Content-Type: application/json'
 ```
-Authorization: Bearer <token>
+    
+**Sample response**
+```JSON
+{
+    "token": "<token>"
+}
 ```
+    
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| token | string| New Bearer Auth token. Using for the all next resquests to identify user |
 
-Returns:
+
+## <a name="users"></a>  users
+
+Containts some operations with user and user friends
+
+
+### Endpoints
+
+| Endpoint|  Method | Description | 
+| --- | --- | --- | 
+| [/users/@me](#me) | GET | Geting data about authorized user | 
+| [/users/@me/leaderboards](#my_leaderboards) | GET | Geting list of user leaderboards | 
+| [/users/{username}/activity/data](#activity_data) | GET | Geting user or user friend coding activity data | 
+| [/users/@me/delete](#delete_myself) | DELETE | Deliting user account  |
+
+#### <a name="me"></a>  [1. GET /users/@me](#users)
+
+Gets data about authorized user
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Sample request**
+```curl
+curl --location --request GET 'https://testaustime.fi/api/users/@me' \
+--header 'Authorization: Bearer `<token>`'
 ```
-<NEWAUTHTOKEN>
+    
+**Sample response**
+```JSON
+{
+    "id": 0,
+    "friend_code": "<friend_code>",
+    "username": "<username>",
+    "registration_time": "YYYY-DD-MMTHH:MM:SS.ssssssZ"
+}
 ```
+    
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| id | int| User id |
+| friend_code | string | By this code another users can add user to the friend list |
+| username | string | Username |
+| registration_time | string (ISO 8601 format) | Time of registration to microsends |
 
-### POST /friends/add
+#### <a name="my_leaderboards"></a>  [2. GET /users/@me/leaderboards](#users)
 
-Add the holder of the friend token as a friend of the authenticating user
+Gets list of user leaderboards 
+    
+**Header params:**
 
-Accepts:
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Sample request**
+```curl
+curl --location --request GET 'https://testaustime.fi/api/users/@me/leaderboards' \
+--header 'Authorization: Bearer <token>'
 ```
-ttfc_FRIENDCODE
-```
-
-*Note: The friend code is valid with or without the "ttfc_" prefix*
-
-
-Required headers:
-```
-Authorization: Bearer <token>
-```
-
-### GET /friends/list
-
-Gets a list of the authenticating users friends
-
-Returns:
-```
+    
+**Sample response**
+```JSON
 [
-    string,
-    ...
+    {
+        "name": "Username's leaderboard",
+        "member_count": 2
+    }
 ]
 ```
 
-The string specifies the friends username
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| name | string | Name of leaderboard in which the user is a member |
+| member_count | int | Number of users in the leaderboard |
 
-Required headers:
+#### <a name="activity_data"></a>  [3. GET /users/{username}/activity/data](#users)
+
+Geting user or user friend coding activity data
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Path params:**
+
+| Path param |  Description | 
+| --- | --- | 
+| Username | Own or friend username. Also own username can be replaced on `@me`|
+
+**Sample request**
+```curl
+curl --location --request GET 'https://testaustime.fi/api/users/@me/activity/data' \
+--header 'Authorization: Bearer <token>'
 ```
-Authorization: Bearer <token>
+    
+**Sample response**
+```JSON
+[
+    {
+        "id": 0,
+        "start_time": "YYYY-DD-MMTHH:MM:SS.ssssssZ",
+        "duration": 0,
+        "project_name": "string",
+        "language": "string",
+        "editor_name": "string",
+        "hostname": "string"
+    }
+]
 ```
 
-### POST /friends/regenerate
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| id | int | ID of user code session |
+| start_time | string (ISO 8601 format) | Start time (time of sending first heartbeat) of user code session to microsecnods | 
+| duration | int | Duration of user code session in seconds |
+| project_name | string| Name of the project in which user have a code session |
+| language | string| Code language |
+| editor_name | string| Name of IDA (Visual Studio Code, IntelliJ, Neovim, etc.) in which user is coding |
+| hostname | string| User hostname |
 
-Regenerates the authenticating users friend code
+#### <a name="delete_myself"></a>  [4. DELETE /users/@me/delete](#users)
+
+Delites user account
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json |
+
+**Body params:**
+
+| Param |  Type | Required | Description |
+| --- | --- | --- | --- |
+| username| string | Yes | Username |
+| password | string | Yes | User password |
+
+**Sample request**
+```curl
+curl --request DELETE 'https://testaustime.fi/api/users/@me/delete' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "username": "<username>",
+    "password": "<password>"
+}'
+```
+    
+**Sample response**
+```http
+200 OK
+```
+
+**Error examples**
+    
 
 
-Required headers:
-```
-Authorization: Bearer <token>
-```
 
-Returns:
-```
-NEWFRIENDCODE
-```
+
+
+    
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
