@@ -7,7 +7,7 @@ Testaustime API gives 5 different routes:
 - [Users](#users)
 - [Activity](#activity)
 - [Friends](#friends)
-- leaderboards
+- [Leaderboards](#leaderboards)
 
 Limits: 
 - Usually Ratelimit: 10 req/m. The desired interval at which to send heartbeats is immediately when editing a file, and after that at max every 30 seconds, and only when the user does something actively in the editor.
@@ -533,8 +533,8 @@ Containts CRUD-operations with user friends
 | Endpoint|  Method | Description | 
 | --- | --- | --- | 
 | [/friends/add](#add_friend) | POST | Adding the holder of the friend_token as a friend of the authenticating user | 
-| [friends/list](#list_friends) | GET | Geting a list of added user friends | 
-| [friends/regenerate](#regenerate_fc) | POST | Regenerating the authenticating users friend code | 
+| [/friends/list](#list_friends) | GET | Geting a list of added user friends | 
+| [/friends/regenerate](#regenerate_fc) | POST | Regenerateing the authorized user's friend code | 
 | [/friends/remove](#remove_friend) | DELETE | Removing another user from your friend list |
 
 #### <a name="add_friend"></a>  [1. POST /friends/add](#friends)
@@ -609,10 +609,82 @@ curl --request GET 'https://testaustime.fi/api/friends/list' \
     
 | Response Item | Type | Description | 
 | --- | --- | --- | 
-| username | string | Username |
-| coding_time | Object | Coding time of a friend by total time, past month and past week | 
+| username | string | Friend's username |
+| coding_time | Object | Coding friend's time by total, past month and past week | 
 | all_time | int | Total duration of user code sessions in seconds |
-| past_month | int| Total duration of user code sessions in seconds for the past month |
-| past_week | int| Total duration of user code sessions in seconds for the past week |
+| past_month | int| Total duration of user code sessions in seconds for past month |
+| past_week | int| Total duration of user code sessions in seconds for past week |
+
+#### <a name="regenerate_fc"></a>  [3. POST /friends/regenerate](#friends)
+
+Regenerates the authorized user's friend code
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Sample request**
+```curl
+curl --request POST 'https://testaustime.fi/api/friends/regenerate' \
+--header 'Authorization: Bearer <token>'
+```
+    
+**Sample response**
+```JSON
+{
+    "friend_code": "<friend_code>"
+}
+```
+    
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| friend_code | string| New friend code. Using for the all next create friends paire operations |
+
+#### <a name="remove_friend"></a>  [4. DELETE /friends/remove](#friends)
+
+Removes another user from your friend list
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| raw text | string | friend's username should be without any prefixes |
+
+**Sample response** 
+```HTTP
+200 OK
+```
+
+## <a name="leaderboards"></a>  Leaderboards
+
+Containts CRUD-operations with leaderboards consisting of other Testaustime users
+
+### Endpoints
+
+| Endpoint|  Method | Description | 
+| --- | --- | --- | 
+| [/leaderboards/create](#create_lb) | POST | Adding new leaderboard | 
+| [/leaderboard/join](#join_lb) | POST | Joining leaderboard by it's invite code | 
+| [/leaderboards/{name}](#read_lb) | GET | Getting info about leaderboard if user is a member |
+| [/leaderboard/{name}](#delete_lb) | DELETE | Deleting leaderboard if authorized user has admin rights |
+| [/leaderboards/{name}/leave](#leave_lb) | POST | Leaving the leaderboard |
+| [/leaderboards/{name}/regenerate](#regenerate_lb) | POST | Regenerating invite code of the leaderboard if authorized user has admin rights |
+| [/leaderboards/{name}/promote](#promote_lb) | POST | Promoting member of a leaderboard to admin if authorized user has admin rights |
+| [/leaderboards/{name}/demote](#demote_lb) | POST | Demoting promoted admin to regular member of the leaderboard if authorized user has root admin rights |
+| [/leaderboards/{name}/kick](#kick_lb) | POST | Kicking user from leaderboard if authorized user has root admin rights |
+
+
+
+
 
 
