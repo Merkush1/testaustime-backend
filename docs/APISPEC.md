@@ -3,16 +3,16 @@
 ## General info
 
 Testaustime API gives 5 different routes:
-- [auth](#auth)
-- [users](#users)
-- activity
+- [Auth](#auth)
+- [Users](#users)
+- [Activity](#activity)
 - friends
 - leaderboards
 
 Limits: 
 - Usually Ratelimit: 10 req/m. The desired interval at which to send heartbeats is immediately when editing a file, and after that at max every 30 seconds, and only when the user does something actively in the editor.
 
-## <a name="auth"></a>  auth
+## <a name="auth"></a>  Auth
 
 Contains various user authorization operations
 
@@ -59,7 +59,7 @@ curl --request POST https://testaustime.fi/api/auth/register' \
     "auth_token": "<token>", 
     "username": "<username>", 
     "friend_code": "<friend_code>", 
-    "registration_time": "YYYY-DD-MMTHH:MM:SS.sssssssssZ"
+    "registration_time": "YYYY-MM-DDTHH:MM:SS.sssssssssZ"
 }
 ```
 
@@ -107,7 +107,7 @@ curl --request POST 'https://testaustime.fi/api/auth/login' \
     "auth_token": "<token>",
     "friend_code": "<friend_code>",
     "username": "<username>",
-    "registration_time": "YYYY-DD-MMTHH:MM:SS.ssssssZ"
+    "registration_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ"
 }
 ```
 
@@ -231,7 +231,7 @@ curl --request POST 'https://testaustime.fi/api/auth/regenerate' \
 | token | string| New Bearer Auth token. Using for the all next resquests to identify user |
 
 
-## <a name="users"></a>  users
+## <a name="users"></a>  Users
 
 Containts some operations with user and user friends
 
@@ -267,7 +267,7 @@ curl --location --request GET 'https://testaustime.fi/api/users/@me' \
     "id": 0,
     "friend_code": "<friend_code>",
     "username": "<username>",
-    "registration_time": "YYYY-DD-MMTHH:MM:SS.ssssssZ"
+    "registration_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ"
 }
 ```
     
@@ -340,7 +340,7 @@ curl --location --request GET 'https://testaustime.fi/api/users/@me/activity/dat
 [
     {
         "id": 0,
-        "start_time": "YYYY-DD-MMTHH:MM:SS.ssssssZ",
+        "start_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ",
         "duration": 0,
         "project_name": "string",
         "language": "string",
@@ -394,7 +394,141 @@ curl --request DELETE 'https://testaustime.fi/api/users/@me/delete' \
 200 OK
 ```
 
-**Error examples**
+## <a name="activity"></a>  Activity
+
+Contains main operations with activity heartbeats on which this service is based on
+
+### Endpoints
+
+| Endpoint|  Method | Description | 
+| --- | --- | --- | 
+| [/activity/update](#activity_up) | POST | Creating code session and logs current activity in that| 
+| [/activity/flush](#activity_fl) | POST | Flushing any currently active coding session | 
+| [/activity/delete](#activity_del) | DELETE | Deleting selected code session | 
+
+#### <a name="activity_up"></a>  [1. POST /activity/update](#activity)
+
+Main endpoint of the service. Creates code session and logs current activity in that. 
+
+>*The desired interval at which to send heartbeats is immediately when editing a file, and after that at max every 30 seconds, and only when the user does something actively in the editor*
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+| Content-Type | application/json |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| language | string | Code language of the code session  |
+| hostname | string | User hostname | 
+| editor_name | string | Name of IDA (Visual Studio Code, IntelliJ, Neovim, etc.) in which user is coding |
+| project_name | string| Name of the project in which user have a code session |
+
+
+**Sample first request**
+
+If the user doesn't have any active code session with this set of these values then first request `POST /activity/update` creates new code session
+
+>Any other code session automatically stops after starting new one, so the user can't have 2+ active code sessions in one time 
+
+```curl
+curl --request POST 'https://testaustime.fi/api/activity/update' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "language": "Python",
+    "hostname": "Hostname1",
+    "editor_name": "IntelliJ",
+    "project_name": "example_project"
+}'
+```
+    
+**Sample response** 
+```HTTP
+200 OK
+Body: 0 
+```
+
+**Sample next request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/activity/update' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "language": "Python",
+    "hostname": "Hostname1",
+    "editor_name": "IntelliJ",
+    "project_name": "example_project"
+}'
+```
+    
+**Sample next response** 
+```HTTP
+200 OK
+Body: PT7.420699439S //duration of the user code session in seconds to nanoseconds
+```
+
+#### <a name="activity_fl"></a>  [2. POST /activity/flush](#activity)
+
+Flushes/stops any currently active coding session 
+
+>*Active coding session can be flushed/stoped automatically without any activity updates for a long tinme (requests `POST /activity/update`*
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Sample request**
+-----
+
+```curl
+curl --request POST 'https://testaustime.fi/api/activity/update' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "language": "Python",
+    "hostname": "Hostname1",
+    "editor_name": "IntelliJ",
+    "project_name": "example_project"
+}'
+```
+    
+**Sample response** 
+```HTTP
+200 OK
+Body: 0 
+```
+
+**Sample next request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/activity/update' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "language": "Python",
+    "hostname": "Hostname1",
+    "editor_name": "IntelliJ",
+    "project_name": "example_project"
+}'
+```
+    
+**Sample next response** 
+```HTTP
+200 OK
+Body: PT7.420699439S //duration of the user code session in seconds to nanoseconds
+
+
+
+    
+
     
 
 
