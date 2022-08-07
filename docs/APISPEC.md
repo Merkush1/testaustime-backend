@@ -806,8 +806,8 @@ curl --request GET 'https://testaustime.fi/api/leaderboards/<name>' \
 **Sample response** 
 ```JSON
 {
-  "name": <name>,
-  "invite": <invite_code>,
+  "name": "<name>",
+  "invite": "<invite_code>",
   "creation_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ",
   "members": [
     {
@@ -864,8 +864,8 @@ curl --request GET 'https://testaustime.fi/api/leaderboards/<name>' \
 **Sample response** 
 ```JSON
 {
-  "name": <name>,
-  "invite": <invite_code>,
+  "name": "<name>",
+  "invite": "<invite_code>",
   "creation_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ",
   "members": [
     {
