@@ -6,7 +6,7 @@ Testaustime API gives 5 different routes:
 - [Auth](#auth)
 - [Users](#users)
 - [Activity](#activity)
-- friends
+- [Friends](#friends)
 - leaderboards
 
 Limits: 
@@ -433,7 +433,7 @@ Main endpoint of the service. Creates code session and logs current activity in 
 
 If the user doesn't have any active code session with this set of these values then first request `POST /activity/update` creates new code session
 
->Any other code session automatically stops after starting new one, so the user can't have 2+ active code sessions in one time 
+>Any other code session automatically stops after starting new one, so the user can't have >1 active code sessions in one time 
 
 ```curl
 curl --request POST 'https://testaustime.fi/api/activity/update' \
@@ -486,163 +486,133 @@ Flushes/stops any currently active coding session
 | Authorization | Bearer `<token>` |
 
 **Sample request**
------
-
 ```curl
-curl --request POST 'https://testaustime.fi/api/activity/update' \
---header 'Authorization: Bearer <token>' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "language": "Python",
-    "hostname": "Hostname1",
-    "editor_name": "IntelliJ",
-    "project_name": "example_project"
-}'
+curl --request POST 'https://testaustime.fi/api/activity/flush' \
+--header 'Authorization: Bearer <token>'
 ```
     
 **Sample response** 
 ```HTTP
 200 OK
-Body: 0 
 ```
 
-**Sample next request**
+#### <a name="activity_del"></a>  [3. POST /activity/delete](#activity)
 
-```curl
-curl --request POST 'https://testaustime.fi/api/activity/update' \
---header 'Authorization: Bearer <token>' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "language": "Python",
-    "hostname": "Hostname1",
-    "editor_name": "IntelliJ",
-    "project_name": "example_project"
-}'
-```
+Deletes selected code session
     
-**Sample next response** 
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| raw text | string | Maybe userid, maybe activity id, maybe something else, idk |
+
+**Sample response** 
 ```HTTP
 200 OK
-Body: PT7.420699439S //duration of the user code session in seconds to nanoseconds
+```
 
-
-
+**Error examples**
     
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| - | 404 Not Found | - | 
 
+
+## <a name="friends"></a>  Friends
+
+Containts CRUD-operations with user friends
+
+### Endpoints
+
+| Endpoint|  Method | Description | 
+| --- | --- | --- | 
+| [/friends/add](#add_friend) | POST | Adding the holder of the friend_token as a friend of the authenticating user | 
+| [friends/list](#list_friends) | GET | Geting a list of added user friends | 
+| [friends/regenerate](#regenerate_fc) | POST | Regenerating the authenticating users friend code | 
+| [/friends/remove](#remove_friend) | DELETE | Removing another user from your friend list |
+
+#### <a name="add_friend"></a>  [1. POST /friends/add](#friends)
+
+Adds the holder of the friend_token as a friend of the authenticating user
     
+**Header params:**
 
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
 
+**Body params:**
 
+| Param | Type | Description | 
+| --- | --- | --- | 
+| raw text | string | Should contain <friend_code> without any prefixes |
 
+**Sample request**
 
+```curl
+curl --request POST 'https://testaustime.fi/api/friends/add' \
+--header 'Authorization: Bearer <token>' \
+--data-raw '<friend_code>'
+```
     
+**Sample response** 
+```HTTP
+200 OK
+```
+
+**Error examples**
     
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Friendcode is already used for adding a friend | 403 Forbidden | { "error": "Already friends"} |
+| Friendcode from body request is not found | 404 Not Found | { "error": "User not found"} |
+| Friendcode mathes with friendcode of authorized user himself the n 403 Forbidden | 403 Forbidden | { "error": "You cannot add yourself"} |
 
+#### <a name="list_friends"></a>  [2. GET friends/list](#friends)
+
+Gets a list of added user friends
     
+**Header params:**
 
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
 
+**Sample request**
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```curl
+curl --request GET 'https://testaustime.fi/api/friends/list' \
+--header 'Authorization: Bearer <token>'
+```
     
+**Sample response** 
+```JSON
+[
+    {
+        "username": "<username>",
+        "coding_time": {
+            "all_time": 0,
+            "past_month": 0,
+            "past_week": 0
+        }
+    }
+]
+```
+
+**Response definitions**
     
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| username | string | Username |
+| coding_time | Object | Coding time of a friend by total time, past month and past week | 
+| all_time | int | Total duration of user code sessions in seconds |
+| past_month | int| Total duration of user code sessions in seconds for the past month |
+| past_week | int| Total duration of user code sessions in seconds for the past week |
 
 
