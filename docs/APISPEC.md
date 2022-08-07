@@ -675,13 +675,232 @@ Containts CRUD-operations with leaderboards consisting of other Testaustime user
 | --- | --- | --- | 
 | [/leaderboards/create](#create_lb) | POST | Adding new leaderboard | 
 | [/leaderboard/join](#join_lb) | POST | Joining leaderboard by it's invite code | 
-| [/leaderboards/{name}](#read_lb) | GET | Getting info about leaderboard if user is a member |
+| [/leaderboards/{name}](#read_lb) | GET | Getting info about leaderboard if authorized user is a member |
 | [/leaderboard/{name}](#delete_lb) | DELETE | Deleting leaderboard if authorized user has admin rights |
 | [/leaderboards/{name}/leave](#leave_lb) | POST | Leaving the leaderboard |
 | [/leaderboards/{name}/regenerate](#regenerate_lb) | POST | Regenerating invite code of the leaderboard if authorized user has admin rights |
 | [/leaderboards/{name}/promote](#promote_lb) | POST | Promoting member of a leaderboard to admin if authorized user has admin rights |
-| [/leaderboards/{name}/demote](#demote_lb) | POST | Demoting promoted admin to regular member of the leaderboard if authorized user has root admin rights |
+| [/leaderboards/{name}/demote](#demote_lb) | POST | Demoting promoted admin to regular member of the leaderboard if authorized user has admin rights |
 | [/leaderboards/{name}/kick](#kick_lb) | POST | Kicking user from leaderboard if authorized user has root admin rights |
+
+#### <a name="create_lb"></a>  [1. POST /leaderboards/create](#leaderboards)
+
+Adds new leaderboard
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+| Content-Type | application/json |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| name| string | Name of creating leaderboard |
+
+**Sample request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/leaderboards/create' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "name": "<name>"
+}'
+```
+    
+**Sample response** 
+```JSON
+{
+    "invite_code": "wPVt7K0cs9FYHe439MdCztgBQnaO3Ers"
+}
+```
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| invite_code | string| Invite code for joining leaderboard |
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| "Name" of the leaderboard from body is already used| 403 Forbidden | { "error": "Leaderboard exists"} |
+
+#### <a name="join_lb"></a>  [2. POST /leaderboard/join](#leaderboards)
+
+Joins leaderboard by it's invite code
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+| Content-Type | application/json |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| invite | string | Invite code for joining leaderboard |
+
+**Sample request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/leaderboards/join' \
+--header 'Authorization: Bearer <token>' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "invite": "<invite_code>"
+}'
+```
+    
+**Sample response** 
+```JSON
+{
+    "member_count": 0,
+    "name": "<name>"
+}
+
+```
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| member_count | int| Number of leaderboard members |
+| name | string| Leaderboard name |
+
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is already part of the leaderboard | 403 Forbidden | { "error": "You're already a member"} |
+| Leaderboard not found by invite code | 404 Not Found | { "error": "Leaderboard not found"} |
+
+#### <a name="read_lb"></a>  [3. GET /leaderboards/{name}](#leaderboards)
+
+Gets info about leaderboard if authorized user is a member
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Path params:**
+
+| Path param | Description | 
+| --- | --- | 
+| {name} | Leaderboard name |
+
+**Sample request**
+
+```curl
+curl --request GET 'https://testaustime.fi/api/leaderboards/<name>' \
+--header 'Authorization: Bearer <token>'
+```
+    
+**Sample response** 
+```JSON
+{
+  "name": <name>,
+  "invite": <invite_code>,
+  "creation_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ",
+  "members": [
+    {
+      "username": "<username>",
+      "admin": true,
+      "time_coded": 0
+    }
+  ]
+}
+```
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| name | int| Leaderboard name |
+| invite | int| Invite code for joining leaderboard |
+| creation_time| string (ISO 8601 format) | Time of leaderboard creation to microsends |
+| members | array object| Information about leaderboard members |
+| username| string| Member username|
+| admin | boolean| Rights of leaderboard member: admin or regular |
+| time_coded | int| Total duration of user code sessions in second |
+
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is not part of this leaderboard | 401 Unauthorized | { "error": "You are not authorized"} |
+| Leaderboard not found by name | 404 Not Found | { "error": "Leaderboard not found"} |
+
+#### <a name="delete_lb"></a>  [4. DELETE /leaderboard/{name}](#leaderboards)
+
+Deletes leaderboard if authorized user has admin rights
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Path params:**
+
+| Path param | Description | 
+| --- | --- | 
+| {name} | Leaderboard name |
+
+**Sample request**
+
+```curl
+curl --request GET 'https://testaustime.fi/api/leaderboards/<name>' \
+--header 'Authorization: Bearer <token>'
+```
+    
+**Sample response** 
+```JSON
+{
+  "name": <name>,
+  "invite": <invite_code>,
+  "creation_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ",
+  "members": [
+    {
+      "username": "<username>",
+      "admin": true,
+      "time_coded": 0
+    }
+  ]
+}
+```
+**Response definitions**
+    
+| Response Item | Type | Description | 
+| --- | --- | --- | 
+| name | int| Leaderboard name |
+| invite | int| Invite code for joining leaderboard |
+| creation_time| string (ISO 8601 format) | Time of leaderboard creation to microsends |
+| members | array object| Information about leaderboard members |
+| username| string| Member username|
+| admin | boolean| Rights of leaderboard member: admin or regular |
+| time_coded | int| Total duration of user code sessions in second |
+
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is not part of this leaderboard | 401 Unauthorized | { "error": "You are not authorized"} |
+| Leaderboard not found by name | 404 Not Found | { "error": "Leaderboard not found"} |
+
+>*Note: Leaderboard can be deleted either by root administrator or by promoted one*
+
+
+
+
 
 
 
