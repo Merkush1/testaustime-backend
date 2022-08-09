@@ -714,7 +714,7 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/create' \
 **Sample response** 
 ```JSON
 {
-    "invite_code": "wPVt7K0cs9FYHe439MdCztgBQnaO3Ers"
+    "invite_code": "<invite_code>"
 }
 ```
 **Response definitions**
@@ -727,7 +727,7 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/create' \
     
 | Error | Error code | Body | 
 | --- | --- | --- | 
-| "Name" of the leaderboard from body is already used| 403 Forbidden | { "error": "Leaderboard exists"} |
+| "Name" of the leaderboard is already used| 403 Forbidden | { "error": "Leaderboard exists"} |
 
 #### <a name="join_lb"></a>  [2. POST /leaderboard/join](#leaderboards)
 
@@ -857,37 +857,14 @@ Deletes leaderboard if authorized user has admin rights
 **Sample request**
 
 ```curl
-curl --request GET 'https://testaustime.fi/api/leaderboards/<name>' \
+curl --request DELETE 'https://testaustime.fi/api/leaderboards/{name}' \
 --header 'Authorization: Bearer <token>'
 ```
     
 **Sample response** 
-```JSON
-{
-  "name": "<name>",
-  "invite": "<invite_code>",
-  "creation_time": "YYYY-MM-DDTHH:MM:SS.ssssssZ",
-  "members": [
-    {
-      "username": "<username>",
-      "admin": true,
-      "time_coded": 0
-    }
-  ]
-}
+```HTTP
+200 OK
 ```
-**Response definitions**
-    
-| Response Item | Type | Description | 
-| --- | --- | --- | 
-| name | int| Leaderboard name |
-| invite | int| Invite code for joining leaderboard |
-| creation_time| string (ISO 8601 format) | Time of leaderboard creation to microsends |
-| members | array object| Information about leaderboard members |
-| username| string| Member username|
-| admin | boolean| Rights of leaderboard member: admin or regular |
-| time_coded | int| Total duration of user code sessions in second |
-
 
 **Error examples**
     
@@ -898,12 +875,226 @@ curl --request GET 'https://testaustime.fi/api/leaderboards/<name>' \
 
 >*Note: Leaderboard can be deleted either by root administrator or by promoted one*
 
+#### <a name="leave_lb"></a>  [5. POST /leaderboards/{name}/leave](#leaderboards)
 
+Leaves the leaderboard
+    
+**Header params:**
 
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
 
+**Path params:**
 
+| Path param | Description | 
+| --- | --- | 
+| {name} | Leaderboard name |
 
+**Sample request**
 
+```curl
+curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/leave' \
+--header 'Authorization: Bearer <token>'
+```
+    
+**Sample response** 
+```HTTP
+200 OK
+```
 
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is the last admin in leaderboard| 403 Forbidden | { "error": "There are no more admins left, you cannot leave"} |
+| User is not the part of the leaderboard | 403 Frobidden | { "error": "You're not a member"} |
+| Leaderboard not found by name | 404 Not Found | { "error": "Leaderboard not found"} |
 
+>*Note: Leaderboard can be deleted either by root administrator or by promoted one*
 
+#### <a name="promote_lb"></a>  [6. POST /leaderboards/{name}/regenerate](#leaderboards)
+
+Regenerates invite code of the leaderboard if authorized user has admin rights
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Authorization | Bearer `<token>` |
+
+**Path params:**
+
+| Path param | Description | 
+| --- | --- | 
+| {name} | Leaderboard name |
+
+**Sample request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/regenerate' \
+--header 'Authorization: Bearer <token>'
+```
+    
+**Sample response** 
+```JSON
+{
+    "invite_code": "<invite_code>"
+}
+```
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
+| Leaderboard not found by name | 404 Not Found | { "error": "Leaderboard not found"} |
+
+#### <a name="regenerate_lb"></a>  [7. POST /leaderboards/{name}/promote](#leaderboards)
+
+Promotes member of a leaderboard to admin if authorized user has admin rights. Be careful of promoting users, root admin (creator of the leaderboard) can be demoted/kicked as a promoted one
+
+>*This request is idempotent, it means that you can: 
+>1. *Promote user that is already admin and have in response 200 OK*
+>2. *Promote yourself to admin being already admin and have in response 200 OK*
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json |
+| Authorization | Bearer `<token>` |
+
+**Path params:**
+
+| Path param | Description | 
+| --- | --- | 
+| {name} | Leaderboard name |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| user | string | Username of a leaderboard member you want to promote |
+
+**Sample request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/promote' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <token>' \
+--data-raw '{
+    "user": "<user>"
+}'
+```
+    
+**Sample response** 
+```HTTP
+200 OK
+
+```
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
+| Promoting user is not the leaderboard member | 403 Forbidden | { "error": "You're not a member"} |
+
+#### <a name="demote_lb"></a>  [8. POST /leaderboards/{name}/demote](#leaderboards)
+
+Demotes admin to regular member in the leaderboard if authorized user has admin rights. Be careful of promoting users, root admin (creator of the leaderboard) can be demoted as a promoted one
+
+>*This request is idempotent, it means that you can demote user that is already regular and have in response 200 OK*
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json |
+| Authorization | Bearer `<token>` |
+
+**Path params:**
+
+| Path param | Description | 
+| --- | --- | 
+| {name} | Leaderboard name |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| user | string | Username of a leaderboard admin you want to demote|
+
+**Sample request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/demote' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <token>' \
+--data-raw '{
+    "user": "<user>"
+}'
+```
+    
+**Sample response** 
+```HTTP
+200 OK
+
+```
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
+| Demoting user is not the leaderboard member | 403 Forbidden | { "error": "You're not a member"} |
+
+#### <a name="kick_lb"></a>  [9. POST /leaderboards/{name}/kick](#leaderboards)
+
+Kicks user from leaderboard if authorized user has admin rights
+
+>*This request is idempotent, it means that you can demote user that is already regular and have in response 200 OK*
+    
+**Header params:**
+
+| Name |  Value | 
+| --- | --- | 
+| Content-Type | application/json |
+| Authorization | Bearer `<token>` |
+
+**Path params:**
+
+| Path param | Description | 
+| --- | --- | 
+| {name} | Leaderboard name |
+
+**Body params:**
+
+| Param | Type | Description | 
+| --- | --- | --- | 
+| user | string | Username of a leaderboard member you want to kick|
+
+**Sample request**
+
+```curl
+curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/kick' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <token>' \
+--data-raw '{
+    "user": "<user>"
+}'
+```
+    
+**Sample response** 
+```HTTP
+200 OK
+
+```
+
+**Error examples**
+    
+| Error | Error code | Body | 
+| --- | --- | --- | 
+| Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
+| Kicking user is not the leaderboard member | 403 Forbidden | { "error": "You're not a member"} |
