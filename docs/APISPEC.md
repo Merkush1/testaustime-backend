@@ -3,14 +3,16 @@
 ## General info
 
 Testaustime API gives 5 different routes:
-- [Auth](#auth)
-- [Users](#users)
-- [Activity](#activity)
-- [Friends](#friends)
-- [Leaderboards](#leaderboards)
+- [/auth/](#auth)
+- [/users/](#users)
+- [/activity/](#activity)
+- [/friends/](#friends)
+- [/leaderboards/](#leaderboards)
+
+Basic path: `https://testaustime.fi/api`
 
 Limits: 
-- Usually Ratelimit: 10 req/m. 
+- Usual Ratelimit: 10 req/m.
 
 ## <a name="auth"></a>  Auth
 
@@ -28,7 +30,7 @@ Contains various user authorization operations
 
 #### <a name="register"></a>    [1. POST /auth/register](#auth)
 
-Creating a new user and returns the user auth token, friend code and registration_time. Ratelimit: 1 req/24h
+Creating a new user and returns the user auth token, friend code and registration time. Ratelimit: 1 req/24h
 
 <details>
   <summary>Header params</summary>  
@@ -170,8 +172,8 @@ curl --request POST 'https://testaustime.fi/api/auth/changeusername' \
   
 | Error | Error code | Body | 
 | --- | --- | --- | 
-| If "new" has <2 or >32 symbols | 400 Bad Request | `{"error" : "Username is not between 2 and 32 chars"}` | 
-| If "new" is using existing username| 403 Forbidden | `"error"» : "User exists"` |
+| "new" has <2 or >32 symbols | 400 Bad Request | `{"error" : "Username is not between 2 and 32 chars"}` | 
+| "new" is using existing username| 403 Forbidden | `"error"» : "User exists"` |
 </details>
 
 #### <a name="changepassword"></a>  [4. POST /auth/changepassword](#auth)
@@ -327,7 +329,7 @@ curl --location --request GET 'https://testaustime.fi/api/users/@me/leaderboards
 ```JSON
 [
     {
-        "name": "Username's leaderboard",
+        "name": "Leaderboard name",
         "member_count": 2
     }
 ]
@@ -392,7 +394,7 @@ curl --location --request GET 'https://testaustime.fi/api/users/@me/activity/dat
 | start_time | string (ISO 8601 format) | Start time (time of sending first heartbeat) of user code session to microsecnods | 
 | duration | int | Duration of user code session in seconds |
 | project_name | string| Name of the project in which user have a code session |
-| language | string| Code language |
+| language | string| Code language of the code session |
 | editor_name | string| Name of IDA (Visual Studio Code, IntelliJ, Neovim, etc.) in which user is coding |
 | hostname | string| User hostname |
 </details> 
@@ -423,8 +425,8 @@ Deletes user account
 curl --request DELETE 'https://testaustime.fi/api/users/@me/delete' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-    "username": "<username>",
-    "password": "<password>"
+    "username": "username",
+    "password": "password"
 }'
 ```
     
@@ -473,7 +475,7 @@ Main endpoint of the service. Creates code session and logs current activity in 
 
 **Sample first request**
 
-If the user doesn't have any active code session with this set of these values then first request `POST /activity/update` creates new code session. Any other code session automatically stops/flushes after starting new one, so the user can't have >1 active code sessions in one time 
+If the user doesn't have any active code session with this set of body params, then first request `POST /activity/update` creates new code session. Any other code session automatically stops/flushes after starting new one, so the user can't have >1 active code sessions in one time 
 
 ```curl
 curl --request POST 'https://testaustime.fi/api/activity/update' \
@@ -516,7 +518,7 @@ Body: PT7.420699439S //duration of the user code session in seconds to nanosecon
 
 Flushes/stops any currently active coding session 
 
->*Active coding session can be flushed/stoped automatically without any activity updates for a long time (without requests `POST /activity/update` for a long time). Also can be flushed automatically in case of starting new code session*
+>*Active coding session can be flushed/stoped automatically without any activity updates for a long time. Also can be flushed automatically in case of starting new code session*
     
 <details>
   <summary>Header params:</summary>
@@ -560,7 +562,7 @@ Deletes selected code session
 **Sample request** 
 ```curl
 curl --request DELETE 'https://testaustime.fi/api/activity/delete' \
---header 'Authorization: Bearer ,token.' \
+--header 'Authorization: Bearer <token>' \
 --data-raw '?'
 ```
 
@@ -585,14 +587,14 @@ Containts CRUD-operations with user friends
 
 | Endpoint|  Method | Description | 
 | --- | --- | --- | 
-| [/friends/add](#add_friend) | POST | Adding the holder of the friend_token as a friend of the authenticating user | 
+| [/friends/add](#add_friend) | POST | Adding the holder of the friend_token as a friend of authorized user | 
 | [/friends/list](#list_friends) | GET | Geting a list of added user friends | 
 | [/friends/regenerate](#regenerate_fc) | POST | Regenerateing the authorized user's friend code | 
-| [/friends/remove](#remove_friend) | DELETE | Removing another user from your friend list |
+| [/friends/remove](#remove_friend) | DELETE | Removing another user from user friend list |
 
 #### <a name="add_friend"></a>  [1. POST /friends/add](#friends)
 
-Adds the holder of the friend_token as a friend of the authenticating user
+Adds the holder of the friend token as a friend of the authenticating user
     
 <details>
   <summary>Header params:</summary>
@@ -629,7 +631,7 @@ curl --request POST 'https://testaustime.fi/api/friends/add' \
 | --- | --- | --- | 
 | Friendcode is already used for adding a friend | 403 Forbidden | { "error": "Already friends"} |
 | Friendcode from body request is not found | 404 Not Found | { "error": "User not found"} |
-| Friendcode mathes with friendcode of authorized user himself the n 403 Forbidden | 403 Forbidden | { "error": "You cannot add yourself"} |
+| Friendcode matches with friendcode of authorized user himself the n 403 Forbidden | 403 Forbidden | { "error": "You cannot add yourself"} |
 </details> 
 
 #### <a name="list_friends"></a>  [2. GET friends/list](#friends)
@@ -723,11 +725,11 @@ Removes another user from your friend list
 </details> 
 
 <details>
-  <summary>Body params:</summary>
+  <summary>Body:</summary>
   
 | Param | Type | Description | 
 | --- | --- | --- | 
-| raw text | string | friend's username should be without any prefixes |
+| raw text | string | Should contain username without any prefixes |
 </details> 
 
 **Sample request** 
@@ -841,7 +843,7 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/join' \
 --header 'Authorization: Bearer <token>' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-    "invite": "<invite_code>"
+    "invite": "invite_code"
 }'
 ```
     
@@ -940,18 +942,24 @@ curl --request GET 'https://testaustime.fi/api/leaderboards/<name>' \
 #### <a name="delete_lb"></a>  [4. DELETE /leaderboard/{name}](#leaderboards)
 
 Deletes leaderboard if authorized user has admin rights
+  
+>*Note: Leaderboard can be deleted either by root administrator or by promoted one*
     
-**Header params:**
-
+<details>
+  <summary>Header params:</summary>
+  
 | Name |  Value | 
 | --- | --- | 
 | Authorization | Bearer `<token>` |
-
-**Path params:**
+</details> 
+  
+<details>
+  <summary>Path params:</summary>
 
 | Path param | Description | 
 | --- | --- | 
 | {name} | Leaderboard name |
+</details> 
 
 **Sample request**
 
@@ -965,30 +973,34 @@ curl --request DELETE 'https://testaustime.fi/api/leaderboards/{name}' \
 200 OK
 ```
 
-**Error examples**
-    
+<details>
+  <summary>Error examples:</summary>
+
 | Error | Error code | Body | 
 | --- | --- | --- | 
 | Authorized user is not part of this leaderboard | 401 Unauthorized | { "error": "You are not authorized"} |
 | Leaderboard not found by name | 404 Not Found | { "error": "Leaderboard not found"} |
-
->*Note: Leaderboard can be deleted either by root administrator or by promoted one*
+</details> 
 
 #### <a name="leave_lb"></a>  [5. POST /leaderboards/{name}/leave](#leaderboards)
 
 Leaves the leaderboard
     
-**Header params:**
+<details>
+  <summary>Header params:</summary>
 
 | Name |  Value | 
 | --- | --- | 
 | Authorization | Bearer `<token>` |
-
-**Path params:**
+</details> 
+  
+<details>
+  <summary>Path params:</summary>
 
 | Path param | Description | 
 | --- | --- | 
 | {name} | Leaderboard name |
+</details> 
 
 **Sample request**
 
@@ -1002,31 +1014,35 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/leave' \
 200 OK
 ```
 
-**Error examples**
-    
+<details>
+  <summary>Error examples:</summary>
+
 | Error | Error code | Body | 
 | --- | --- | --- | 
 | Authorized user is the last admin in leaderboard| 403 Forbidden | { "error": "There are no more admins left, you cannot leave"} |
 | User is not the part of the leaderboard | 403 Frobidden | { "error": "You're not a member"} |
 | Leaderboard not found by name | 404 Not Found | { "error": "Leaderboard not found"} |
-
->*Note: Leaderboard can be deleted either by root administrator or by promoted one*
+</details> 
 
 #### <a name="promote_lb"></a>  [6. POST /leaderboards/{name}/regenerate](#leaderboards)
 
 Regenerates invite code of the leaderboard if authorized user has admin rights
-    
-**Header params:**
+ 
+<details>
+  <summary>Header params:</summary>
 
 | Name |  Value | 
 | --- | --- | 
 | Authorization | Bearer `<token>` |
+</details>   
 
-**Path params:**
+<details>
+  <summary>Path params:</summary>
 
 | Path param | Description | 
 | --- | --- | 
 | {name} | Leaderboard name |
+</details> 
 
 **Sample request**
 
@@ -1041,13 +1057,14 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/regenerate' 
     "invite_code": "<invite_code>"
 }
 ```
+<details>
+  <summary>Error examples:</summary>
 
-**Error examples**
-    
 | Error | Error code | Body | 
 | --- | --- | --- | 
 | Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
 | Leaderboard not found by name | 404 Not Found | { "error": "Leaderboard not found"} |
+</details> 
 
 #### <a name="regenerate_lb"></a>  [7. POST /leaderboards/{name}/promote](#leaderboards)
 
@@ -1056,25 +1073,31 @@ Promotes member of a leaderboard to admin if authorized user has admin rights. B
 >*This request is idempotent, it means that you can: 
 >1. *Promote user that is already admin and have in response 200 OK*
 >2. *Promote yourself to admin being already admin and have in response 200 OK*
-    
-**Header params:**
+
+<details>
+  <summary>Header params:</summary>
 
 | Name |  Value | 
 | --- | --- | 
 | Content-Type | application/json |
 | Authorization | Bearer `<token>` |
+</details>
 
-**Path params:**
+<details>
+  <summary>Path params:</summary>
 
 | Path param | Description | 
 | --- | --- | 
 | {name} | Leaderboard name |
+</details>
 
-**Body params:**
+<details>
+  <summary>Body params:</summary>
 
 | Param | Type | Description | 
 | --- | --- | --- | 
 | user | string | Username of a leaderboard member you want to promote |
+</details>
 
 **Sample request**
 
@@ -1092,13 +1115,14 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/promote' \
 200 OK
 
 ```
+<details>
+  <summary>Error examples:</summary>
 
-**Error examples**
-    
 | Error | Error code | Body | 
 | --- | --- | --- | 
 | Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
 | Promoting user is not the leaderboard member | 403 Forbidden | { "error": "You're not a member"} |
+</details>
 
 #### <a name="demote_lb"></a>  [8. POST /leaderboards/{name}/demote](#leaderboards)
 
@@ -1106,24 +1130,30 @@ Demotes admin to regular member in the leaderboard if authorized user has admin 
 
 >*This request is idempotent, it means that you can demote user that is already regular and have in response 200 OK*
     
-**Header params:**
+<details>
+  <summary>Header params:</summary>
 
 | Name |  Value | 
 | --- | --- | 
 | Content-Type | application/json |
 | Authorization | Bearer `<token>` |
+</details>
 
-**Path params:**
+<details>
+  <summary>Path params:</summary>
 
 | Path param | Description | 
 | --- | --- | 
 | {name} | Leaderboard name |
+</details>
 
-**Body params:**
+<details>
+  <summary>Body params:</summary>
 
 | Param | Type | Description | 
 | --- | --- | --- | 
 | user | string | Username of a leaderboard admin you want to demote|
+</details>
 
 **Sample request**
 
@@ -1141,13 +1171,15 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/demote' \
 200 OK
 
 ```
+  
+<details>
+  <summary>Error examples:</summary>
 
-**Error examples**
-    
 | Error | Error code | Body | 
 | --- | --- | --- | 
 | Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
 | Demoting user is not the leaderboard member | 403 Forbidden | { "error": "You're not a member"} |
+</details>
 
 #### <a name="kick_lb"></a>  [9. POST /leaderboards/{name}/kick](#leaderboards)
 
@@ -1155,24 +1187,30 @@ Kicks user from leaderboard if authorized user has admin rights
 
 >*This request is idempotent, it means that you can demote user that is already regular and have in response 200 OK*
     
-**Header params:**
+<details>
+  <summary>Header params:</summary>
 
 | Name |  Value | 
 | --- | --- | 
 | Content-Type | application/json |
 | Authorization | Bearer `<token>` |
-
-**Path params:**
+</details>
+  
+<details>
+  <summary>Path params:</summary>
 
 | Path param | Description | 
 | --- | --- | 
 | {name} | Leaderboard name |
-
-**Body params:**
+</details>
+  
+<details>
+  <summary>Body params:</summary>
 
 | Param | Type | Description | 
 | --- | --- | --- | 
 | user | string | Username of a leaderboard member you want to kick|
+</details>
 
 **Sample request**
 
@@ -1190,10 +1228,11 @@ curl --request POST 'https://testaustime.fi/api/leaderboards/{name}/kick' \
 200 OK
 
 ```
+<details>
+  <summary>Error examples:</summary>
 
-**Error examples**
-    
 | Error | Error code | Body | 
 | --- | --- | --- | 
 | Authorized user is not part of found leaderboard or user is not an admin | 401 Unauthorized | { "error": "You are not authorized"} |
 | Kicking user is not the leaderboard member | 403 Forbidden | { "error": "You're not a member"} |
+</details>
